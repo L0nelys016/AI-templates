@@ -40,7 +40,7 @@ class BuildTest(unittest.TestCase):
             bundle = Path(tmp) / "c.py"
             bundle.write_bytes(build.bundle().encode("utf-8"))
             r = subprocess.run([sys.executable, "-I", str(bundle), "--version"], check=True, capture_output=True, text=True)
-            self.assertIn("claude-templates 0.2.0", r.stdout)
+            self.assertEqual("claude-templates 0.2.1", r.stdout.strip())
 
 
 if __name__ == "__main__":
