@@ -6,6 +6,47 @@ import setup
 
 
 class AgentTest(unittest.TestCase):
+    def test_documented_markers_do_not_claim_or_replace_user_text(self):
+        begin, end = setup.MD_MARKS
+        example = f"Use {begin} and {end} as follows:\n\n```md\n{begin}\nmy example\n{end}\n```\n"
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = root / "CLAUDE.md"
+            path.write_bytes(example.encode())
+            setup.apply(setup.build(root, ["python"], None, [], "github", agents=["codex"])[0])
+            self.assertEqual(path.read_bytes(), example.encode())
+            setup.apply(setup.build(root, ["python"], None, [], "github", agents=["claude"])[0])
+            setup.apply(setup.build(root, ["react"], None, [], "github", agents=["codex"])[0])
+            content = setup.read(path)
+            self.assertTrue(content.startswith(example))
+            self.assertIn("## React", content)
+            self.assertNotIn("## Python", content)
+
+    def test_unselected_utf16_profile_does_not_block_install(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = root / "CLAUDE.md"
+            original = "User instructions".encode("utf-16")
+            path.write_bytes(original)
+            setup.apply(setup.build(root, ["python"], None, [], "github", agents=["codex"])[0])
+            self.assertEqual(path.read_bytes(), original)
+            self.assertTrue((root / "AGENTS.md").is_file())
+
+    def test_discovery_skips_links_outside_the_project(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            root = base / "project"
+            root.mkdir()
+            shared = base / "shared.md"
+            original = "\n".join([setup.MD_MARKS[0], "shared rules", setup.MD_MARKS[1]]).encode()
+            shared.write_bytes(original)
+            try:
+                (root / "CLAUDE.md").symlink_to(shared)
+            except OSError as e:
+                self.skipTest(f"symlink unavailable: {e}")
+            setup.apply(setup.build(root, ["python"], None, [], "github", agents=["codex"])[0])
+            self.assertEqual(shared.read_bytes(), original)
+
     def test_partial_reinstall_keeps_installed_profiles_in_sync(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
