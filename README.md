@@ -4,6 +4,16 @@
 
 Install project instructions for Claude, Codex and GitHub Copilot in VS Code.
 
+## Download the installer
+
+Requires Python 3.9 or later.
+
+| Platform | Download | How to start |
+|---|---|---|
+| macOS | [macOS.zip](https://github.com/L0nelys016/AI-templates/releases/latest/download/macOS.zip) | Extract the archive and double-click `Install.command` in Finder. |
+| Windows | [Windows.zip](https://github.com/L0nelys016/AI-templates/releases/latest/download/Windows.zip) | Extract the archive and double-click `Install.cmd`. |
+| Linux | [Linux.tar.gz](https://github.com/L0nelys016/AI-templates/releases/latest/download/Linux.tar.gz) | Extract the archive and run `./Install.sh` from the extracted folder. |
+
 Stacks: **C#**, **Unity** (implies C#), **Python**, **Node.js**, **TypeScript**, **React** (implies TypeScript).
 Areas: `backend-api`, `web-frontend`, `game`, `desktop-app`, `library-cli`.
 

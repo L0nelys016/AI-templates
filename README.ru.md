@@ -2,6 +2,16 @@
 
 Установщик проектных правил для Claude, Codex и GitHub Copilot в VS Code.
 
+## Скачать установщик
+
+Требуется Python 3.9 или новее.
+
+| Система | Скачать | Как запустить |
+|---|---|---|
+| macOS | [macOS.zip](https://github.com/L0nelys016/AI-templates/releases/latest/download/macOS.zip) | Распакуйте архив и дважды щёлкните `Install.command` в Finder. |
+| Windows | [Windows.zip](https://github.com/L0nelys016/AI-templates/releases/latest/download/Windows.zip) | Распакуйте архив и дважды щёлкните `Install.cmd`. |
+| Linux | [Linux.tar.gz](https://github.com/L0nelys016/AI-templates/releases/latest/download/Linux.tar.gz) | Распакуйте архив и запустите `./Install.sh` из распакованной папки. |
+
 Стеки: **C#**, **Unity** (подтягивает C#), **Python**, **Node.js**, **TypeScript**, **React** (подтягивает TypeScript).
 Области: `backend-api`, `web-frontend`, `game`, `desktop-app`, `library-cli`.
 
