@@ -7,6 +7,7 @@ Scripted:     python setup.py --target ../MyGame --stacks unity --area game --ex
 import argparse
 import json
 import os
+import re
 import sys
 from pathlib import Path
 from string import Template
@@ -36,6 +37,30 @@ def expand(stacks):
     return [s for s in STACKS if s in chosen]
 
 
+def managed_span(text, marks, *, append_to=None):
+    """Locate a pair of standalone markers outside Markdown code fences."""
+    begin, end = marks
+    start = None
+    offset = 0
+    fence = ""
+    for line in text.splitlines(keepends=True):
+        value = line.rstrip("\r\n")
+        if fence:
+            closing = re.fullmatch(r" {0,3}(`+|~+)[ \t]*", value)
+            if closing and closing[1].startswith(fence):
+                fence = ""
+        elif marks == MD_MARKS and (opening := re.match(r"^ {0,3}(`{3,}|~{3,})", value)):
+            fence = opening[1]
+        elif value == begin:
+            start = offset
+        elif value == end and start is not None:
+            return start, offset + len(end)
+        offset += len(line)
+    if fence and append_to is not None:
+        raise SystemExit(f"error: close the Markdown code fence in {append_to} before installing rules")
+    return None
+
+
 def upsert(path, body, marks, header=""):
     """Put body between markers; replace an existing block, append otherwise. Returns (text, how)."""
     begin, end = marks
@@ -43,9 +68,10 @@ def upsert(path, body, marks, header=""):
     if not path.exists():
         return header + block, "create"
     old = read(path)
-    i, j = old.find(begin), old.find(end)
-    if i != -1 and j > i:
-        return old[:i] + block.rstrip("\n") + old[j + len(end):], "update"
+    span = managed_span(old, marks, append_to=path)
+    if span is not None:
+        i, j = span
+        return old[:i] + block.rstrip("\n") + old[j:], "update"
     return old.rstrip("\n") + "\n\n" + block, "append"
 
 
@@ -87,12 +113,18 @@ def build(target, stacks, area, extras, forge, force=False, agents=("claude",), 
 
     # All installed profiles share REVIEW.md, so refresh their managed rules together.
     rule_agents = list(dict.fromkeys(agents))
-    begin, end = MD_MARKS
     for agent, rel in AGENTS.items():
         path = target / rel
         if agent not in rule_agents and path.is_file():
-            _, marker, remainder = read(path).partition(begin)
-            if marker and end in remainder:
+            if not path.resolve().is_relative_to(target.resolve()):
+                notes.append(f"Skipped unselected {rel}: it points outside the project.")
+                continue
+            try:
+                existing = read(path)
+            except (UnicodeDecodeError, PermissionError):
+                notes.append(f"Skipped unselected {rel}: could not read it as UTF-8.")
+                continue
+            if managed_span(existing, MD_MARKS) is not None:
                 rule_agents.append(agent)
 
     for kind in ("CLAUDE", "REVIEW"):
