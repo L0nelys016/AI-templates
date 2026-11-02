@@ -32,4 +32,5 @@ jobs:
           python-version: "3.12"
       - run: python -m unittest discover tests -v
       - run: python build.py
-      - run: python dist/claude-templates.py --version
+      - run: python dist/claude-templates-ru.py --version
+      - run: python dist/claude-templates-en.py --version

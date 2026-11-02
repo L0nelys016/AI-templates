@@ -8,11 +8,11 @@ Install project instructions for Claude, Codex and GitHub Copilot in VS Code.
 
 Requires Python 3.9 or later.
 
-| Platform | Download | How to start |
-|---|---|---|
-| macOS | [macOS.zip](https://github.com/L0nelys016/AI-templates/releases/latest/download/macOS.zip) | Extract the archive and double-click `Install.command` in Finder. |
-| Windows | [Windows.zip](https://github.com/L0nelys016/AI-templates/releases/latest/download/Windows.zip) | Extract the archive and double-click `Install.cmd`. |
-| Linux | [Linux.tar.gz](https://github.com/L0nelys016/AI-templates/releases/latest/download/Linux.tar.gz) | Extract the archive and run `./Install.sh` from the extracted folder. |
+| Platform | Русский | English | How to start |
+|---|---|---|---|
+| macOS | [macOS-ru.zip](https://github.com/L0nelys016/AI-templates/releases/latest/download/macOS-ru.zip) | [macOS-en.zip](https://github.com/L0nelys016/AI-templates/releases/latest/download/macOS-en.zip) | Extract the archive and double-click `Install.command` in Finder. |
+| Windows | [Windows-ru.zip](https://github.com/L0nelys016/AI-templates/releases/latest/download/Windows-ru.zip) | [Windows-en.zip](https://github.com/L0nelys016/AI-templates/releases/latest/download/Windows-en.zip) | Extract the archive and double-click `Install.cmd`. |
+| Linux | [Linux-ru.tar.gz](https://github.com/L0nelys016/AI-templates/releases/latest/download/Linux-ru.tar.gz) | [Linux-en.tar.gz](https://github.com/L0nelys016/AI-templates/releases/latest/download/Linux-en.tar.gz) | Extract the archive and run `./Install.sh` from the extracted folder. |
 
 Stacks: **C#**, **Unity** (implies C#), **Python**, **Node.js**, **TypeScript**, **React** (implies TypeScript).
 Areas: `backend-api`, `web-frontend`, `game`, `desktop-app`, `library-cli`.
@@ -53,7 +53,7 @@ The script never runs `npm` or `git`; it prints the follow-up commands.
 
 ## macOS Finder
 
-Double-click `Install.command` in the repository, or extract the `macOS.zip` release asset and double-click `Install.command` there. Select your project in the folder picker. The English-language wizard explains the choices and previews the files before asking for confirmation. Requires Python 3.9 or newer.
+Double-click `Install.command` in the repository, or extract the `macOS-en.zip` release asset and double-click `Install.command` there. Select your project in the folder picker. The wizard explains the choices and previews the files before asking for confirmation. Requires Python 3.9 or newer.
 
 ## macOS Terminal
 
@@ -70,7 +70,7 @@ Build and run the standalone installer below. For a downloaded release asset, su
 
 ```bash
 python3 build.py
-python3 dist/claude-templates.py
+python3 dist/claude-templates-en.py
 ```
 
 Codex reads project instructions from the repository root down to the working directory. In each directory a nonempty `AGENTS.override.md` takes precedence over `AGENTS.md`. More local rules win conflicts. The default combined project instruction budget is 32 KiB. [Codex](https://learn.chatgpt.com/docs/agent-configuration/agents-md)
@@ -89,6 +89,6 @@ python -m unittest discover tests
 
 ## Download (no clone needed)
 
-Extract the archive for your platform. On macOS open `Install.command` from `macOS.zip`. On Windows open `Install.cmd` from `Windows.zip`. On Linux extract `Linux.tar.gz` and run `./Install.sh` from its directory. Each archive includes the installer and requires Python 3.9 or later.
+Extract the archive for your platform. On macOS open `Install.command` from `macOS-en.zip`. On Windows open `Install.cmd` from `Windows-en.zip`. On Linux extract `Linux-en.tar.gz` and run `./Install.sh` from its directory. Each archive includes the installer and requires Python 3.9 or later.
 
-Take `claude-templates.py` from the [latest release](../../releases/latest) and run `python claude-templates.py`. It is a single file with all templates embedded. Build it yourself with `python build.py` (output: `dist/claude-templates.py`); pushing a `v*` tag publishes a release automatically.
+Take `claude-templates-en.py` from the [latest release](../../releases/latest) and run `python claude-templates-en.py`. It is a single file with all templates embedded. Build it yourself with `python build.py` (output: `dist/claude-templates-en.py`); pushing a `v*` tag publishes a release automatically.
