@@ -246,4 +246,6 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
+    if os.name == "nt" and not sys.stdout.isatty():
+        sys.stdout.reconfigure(encoding="utf-8")
     main()

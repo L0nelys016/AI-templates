@@ -22,9 +22,13 @@ class BuildTest(unittest.TestCase):
                 (t / "AGENTS.md").write_text("User instructions\n", encoding="utf-8")
                 args = [sys.executable, "-I", str(script), "--target", str(t), "--stacks", "python,unity,react", "--agent", "all",
                         "--area", "game", "--extras", "all", "--forge", "both", "--yes"]
-                subprocess.run(args, check=True, capture_output=True)
+                result = subprocess.run(args, capture_output=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn(str(t), result.stdout.decode("utf-8"))
                 first = (t / "AGENTS.md").read_bytes()
-                subprocess.run(args, check=True, capture_output=True)
+                result = subprocess.run(args, capture_output=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn(str(t), result.stdout.decode("utf-8"))
                 self.assertTrue(first.startswith(b"User instructions"))
                 self.assertEqual(first, (t / "AGENTS.md").read_bytes())
                 outs.append({p.relative_to(t).as_posix(): p.read_bytes() for p in t.rglob("*") if p.is_file()})
