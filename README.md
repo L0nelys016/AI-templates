@@ -1,10 +1,10 @@
-# Claude-templates
+# AI templates
 
 [Русская версия](README.ru.md)
 
-Rule templates (`CLAUDE.md`, `REVIEW.md`) for Claude projects and a script that installs them.
+Install project instructions for Claude, Codex and GitHub Copilot in VS Code.
 
-Stacks: **C#**, **Unity** (implies C#), **Node.js**, **TypeScript**, **React** (implies TypeScript).
+Stacks: **C#**, **Unity** (implies C#), **Python**, **Node.js**, **TypeScript**, **React** (implies TypeScript).
 Areas: `backend-api`, `web-frontend`, `game`, `desktop-app`, `library-cli`.
 
 ## Usage
@@ -19,8 +19,11 @@ python setup.py --target . --stacks react,nodejs --dry-run
 
 | Flag | Meaning |
 |---|---|
+| `--agent` | `claude,codex,copilot`, `all`, `both` (Claude + Codex), default Claude |
+| `--commit-lang` | Commit subject language (`ru` / `en`, default `ru`) |
+| `--pr-lang` | PR title and description language (`ru` / `en`, default `ru`) |
 | `--target` | project folder |
-| `--stacks` | `csharp,unity,nodejs,typescript,react` |
+| `--stacks` | `csharp,unity,nodejs,typescript,react,python` |
 | `--area` | one area or `none` |
 | `--extras` | `settings,pr,commitlint,editorconfig,gitignore` / `all` / `none` |
 | `--forge` | `github`, `gitea`, `both` (PR template folder) |
@@ -30,13 +33,35 @@ python setup.py --target . --stacks react,nodejs --dry-run
 
 ## What gets written
 
-- `CLAUDE.md`, `REVIEW.md`: the rules are placed between `claude-templates:begin/end` markers. Re-running updates only that block; your own text is kept.
-- `settings`: `.claude/settings.json` merged (no Claude co-author/attribution, deny force-push and `reset --hard`).
+- `CLAUDE.md` (Claude), `AGENTS.md` (Codex), `.github/copilot-instructions.md` (Copilot), `REVIEW.md`: the rules are placed between `claude-templates:begin/end` markers. Re-running updates only that block; your own text is kept.
+- `settings` (Claude): `.claude/settings.json` merged (no Claude co-author/attribution, deny force-push and `reset --hard`).
 - `pr`: `pull_request_template.md` in `.github/` and/or `.gitea/`.
 - `commitlint`: Node stacks get commitlint + husky; others get plain `.githooks/` (commit format, title only, no co-author, branch name).
 - `editorconfig`, `gitignore`: per selected stack (gitignore is a marked block).
 
 The script never runs `npm` or `git`; it prints the follow-up commands.
+
+## macOS Terminal
+
+From this repository, start the wizard or try the installation in a separate project. Requires Python 3.9+.
+
+```bash
+python3 setup.py
+mkdir -p "../Demo Python"
+python3 setup.py --target "../Demo Python" --stacks python --agent all --commit-lang ru --pr-lang en --extras all --yes --dry-run
+python3 setup.py --target "../Demo Python" --stacks python --agent all --commit-lang ru --pr-lang en --extras all --yes
+```
+
+Build and run the standalone installer below. For a downloaded release asset, substitute its path.
+
+```bash
+python3 build.py
+python3 dist/claude-templates.py
+```
+
+Codex reads project instructions from the repository root down to the working directory. In each directory a nonempty `AGENTS.override.md` takes precedence over `AGENTS.md`. More local rules win conflicts. The default combined project instruction budget is 32 KiB. [Codex](https://learn.chatgpt.com/docs/agent-configuration/agents-md)
+
+CI checks PRs on macOS, Linux and Windows. Once the workflow is on the default branch, select Actions → CI → Run workflow to run just `macos-latest`.
 
 ## Adding a stack
 
