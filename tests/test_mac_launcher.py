@@ -24,9 +24,9 @@ class MacLauncherTest(unittest.TestCase):
             picker.write_text('#!/bin/sh\nprintf "%s\\n" "$PROJECT"\n')
             picker.chmod(0o755)
             env = dict(os.environ, PATH=str(root) + os.pathsep + os.environ["PATH"], PROJECT=str(project))
-            for confirm in ("", "д"):
+            for confirm in ("", "y"):
                 result = subprocess.run([str(launcher)], input=f"6\n\n2\n1\n2\n\n{confirm}\n\n",
                                         text=True, capture_output=True, env=env, cwd=project)
                 self.assertEqual(result.returncode, 0, result.stderr)
-                self.assertIn("Записать перечисленные файлы?", result.stdout)
+                self.assertIn("Write the listed files?", result.stdout)
                 self.assertEqual((project / "AGENTS.md").exists(), bool(confirm))

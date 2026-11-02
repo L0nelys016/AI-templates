@@ -182,13 +182,13 @@ def choose(title, options, multi):
         try:
             picked = parse_list(input("> ").strip(), options)
             if options == STACKS and not picked:
-                print("Выберите хотя бы один стек.")
+                print("Choose at least one technology.")
                 continue
             if multi or len(picked) <= 1:
                 return picked
         except ValueError as e:
-            print(f"Нет такого варианта: {e}")
-        print("Попробуйте ещё раз." if multi else "Выберите один номер.")
+            print(f"Unknown option: {e}")
+        print("Try again." if multi else "Choose one number.")
 
 
 def main(argv=None):
@@ -211,18 +211,18 @@ def main(argv=None):
     try:
         if a.target is None:
             a.target = (input("Target project folder [.]: ").strip() or ".") if ask else "."
-        stacks = parse_list(a.stacks, STACKS) if a.stacks else (choose("Какие технологии использует проект? Введите номера через запятую, например 1,3. Unity включает C#, React включает TypeScript.", STACKS, True) if ask else [])
-        area = a.area if a.area is not None else (choose("Назначение проекта: backend-api — сервер, desktop-app — настольное приложение, game — игра, library-cli — библиотека или утилита, web-frontend — сайт. Enter — пропустить.", ["none"] + AREAS, False) or ["none"])[0] if ask else "none"
-        agents = (choose("Какими помощниками вы пользуетесь? 1 — Claude, 2 — Codex, 3 — Copilot. Можно выбрать несколько через запятую. Enter — Claude.", list(AGENTS), True) if ask else []) if a.agent is None else (
+        stacks = parse_list(a.stacks, STACKS) if a.stacks else (choose("Which technologies does your project use? Enter numbers separated by commas, such as 1,3. Unity includes C# and React includes TypeScript.", STACKS, True) if ask else [])
+        area = a.area if a.area is not None else (choose("What are you building? Choose a project area to add specific guidance, or press Enter to skip.", ["none"] + AREAS, False) or ["none"])[0] if ask else "none"
+        agents = (choose("Which AI assistants do you use? Enter one or more numbers separated by commas. Press Enter for Claude.", list(AGENTS), True) if ask else []) if a.agent is None else (
             ["claude", "codex"] if a.agent == "both" else parse_list(a.agent, list(AGENTS)))
         agents = agents or ["claude"]
         def language(value, title):
             return value or ((choose(title, ["ru", "en"], False) or ["ru"])[0] if ask else "ru")
-        commit_lang = language(a.commit_lang, "На каком языке писать текст после feat: или fix: в коммитах? ru — русский, en — английский. Enter — русский.")
-        pr_lang = language(a.pr_lang, "На каком языке писать заголовок и описание pull request? ru — русский, en — английский. Enter — русский.")
+        commit_lang = language(a.commit_lang, "Which language should follow feat: or fix: in commit titles? Choose ru for Russian or en for English. Press Enter for Russian.")
+        pr_lang = language(a.pr_lang, "Which language should pull request titles and descriptions use? Choose ru for Russian or en for English. Press Enter for Russian.")
         extras = parse_list(a.extras, EXTRAS) if a.extras and a.extras != "none" else (
-            choose("Дополнения: settings — настройки Claude; pr — шаблон PR; commitlint — проверка коммитов; editorconfig — отступы; gitignore — исключения Git. Номера через запятую, all — все доступные, Enter — пропустить.", [e for e in EXTRAS if e != "settings" or "claude" in agents], True) if a.extras is None and ask else [])
-        forge = a.forge or ("github" if not ask or "pr" not in extras else (choose("Где хранится репозиторий? Выбор определяет папку шаблона PR. Enter — GitHub; both — обе площадки.", list(FORGES), False) or ["github"])[0])
+            choose("Optional files: settings configures Claude, pr adds a pull request template, commitlint checks commits, editorconfig defines formatting, and gitignore excludes files from Git. Enter numbers separated by commas, type all, or press Enter to skip.", [e for e in EXTRAS if e != "settings" or "claude" in agents], True) if a.extras is None and ask else [])
+        forge = a.forge or ("github" if not ask or "pr" not in extras else (choose("Where is your repository hosted? This determines where the pull request template goes. Press Enter for GitHub or choose both for GitHub and Gitea.", list(FORGES), False) or ["github"])[0])
     except ValueError as e:
         sys.exit(f"error: unknown value {e}")
     if not stacks:
@@ -236,14 +236,14 @@ def main(argv=None):
     acts, notes = build(target, stacks, None if area == "none" else area, extras, forge, a.force, agents, commit_lang, pr_lang)
     print(f"\nTarget: {target}\nStacks: {', '.join(expand(stacks))}   Area: {area}")
     if ask:
-        print("Проверьте папку и список файлов: create — создать, update/merge — обновить, append — дополнить, skip — пропустить.")
+        print("Review the target folder and file list before confirming. Skipped files will be left as they are.")
     for path, _, how in acts:
         print(f"  {how:<10} {path.relative_to(target)}")
     if a.dry_run:
         print("\n(dry run: nothing written)")
         return
-    if ask and input("\nЗаписать перечисленные файлы? [д/N] ").strip().lower() not in {"д", "да", "y", "yes"}:
-        print("Установка отменена.")
+    if ask and input("\nWrite the listed files? [y/N] ").strip().lower() not in {"д", "да", "y", "yes"}:
+        print("Installation canceled.")
         return
     apply(acts)
     print("\nDone. Next steps:")
