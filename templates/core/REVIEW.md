@@ -53,7 +53,8 @@ Keep unresolved questions and pending approvals separate from findings. If no de
 **Git hygiene**
 - every new branch is pushed on creation and every commit is pushed immediately. Verify that the remote tip matches the local tip. A matching tip alone does not establish when earlier pushes happened.
 - branch name matches `feature|bugfix|hotfix|refactor|docs|chore|temp|wip/<what>`
-- every commit is Conventional Commits, title only, $commit_language text, **no co-author / no Claude mention**
+- every commit is Conventional Commits, title only, $commit_language text
+- commits and PRs contain no `Co-Authored-By` or mention of an AI assistant
 - one task per branch, no unrelated changes mixed in
 - PR: title with prefix and $pr_language text; description starts with `# $pr_heading` in $pr_language
 

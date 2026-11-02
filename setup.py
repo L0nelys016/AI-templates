@@ -85,6 +85,16 @@ def build(target, stacks, area, extras, forge, force=False, agents=("claude",), 
         text, how = upsert(p, body, marks, header)
         acts.append((p, text, how))
 
+    # All installed profiles share REVIEW.md, so refresh their managed rules together.
+    rule_agents = list(dict.fromkeys(agents))
+    begin, end = MD_MARKS
+    for agent, rel in AGENTS.items():
+        path = target / rel
+        if agent not in rule_agents and path.is_file():
+            _, marker, remainder = read(path).partition(begin)
+            if marker and end in remainder:
+                rule_agents.append(agent)
+
     for kind in ("CLAUDE", "REVIEW"):
         parts = [Template(read(ROOT / "core" / f"{kind}.md")).safe_substitute(words)]
         parts += [read(ROOT / "stacks" / s / f"{kind}.md") for s in stacks]
@@ -94,7 +104,7 @@ def build(target, stacks, area, extras, forge, force=False, agents=("claude",), 
         if kind == "REVIEW":
             block("REVIEW.md", body, MD_MARKS, "# REVIEW.md\n\n")
             continue
-        for agent in dict.fromkeys(agents):
+        for agent in rule_agents:
             rel = AGENTS[agent]
             review = "../REVIEW.md" if agent == "copilot" else "REVIEW.md"
             block(rel, body + f"\n\nFor code reviews, follow [the checklist]({review}).", MD_MARKS, f"# {Path(rel).name}\n\n")

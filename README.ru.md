@@ -41,7 +41,7 @@ python setup.py --target . --stacks react,nodejs --dry-run
 
 ## Что записывается
 
-- `CLAUDE.md` (Claude), `AGENTS.md` (Codex), `.github/copilot-instructions.md` (Copilot), `REVIEW.md`: правила помещаются между маркерами `claude-templates:begin/end`. Повторный запуск обновляет только этот блок, ваш текст сохраняется.
+- В `CLAUDE.md` (Claude), `AGENTS.md` (Codex), `.github/copilot-instructions.md` (Copilot) и `REVIEW.md` правила находятся между маркерами `claude-templates:begin/end`. Каждый запуск обновляет общий чек-лист и все ранее установленные профили, сохраняя текст вне маркеров. Выбор агентов определяет, какие новые профили установить.
 - `settings` (Claude): `.claude/settings.json` вливается в существующий (без соавторства и подписи Claude, запрет force-push и `reset --hard`).
 - `pr`: `pull_request_template.md` в `.github/` и/или `.gitea/`.
 - `commitlint`: для Node-стеков ставятся commitlint + husky, для остальных — обычные `.githooks/` (формат коммита, только заголовок, без соавторства, имя ветки).
