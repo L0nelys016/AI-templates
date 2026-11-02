@@ -1,16 +1,20 @@
 ## Review levels
 
-Every finding gets exactly one level. Report format: `[L3] path/file:line — problem → suggested fix`.
+Review the diff against the intended behavior. For each finding, identify the changed line, a reachable condition, the violated expectation and its consequence. Check the caller, contract or test when the conclusion depends on it. Report one finding per root cause, highest impact first:
+
+`[L3] path/file:line — when <condition>, <actual> instead of <expected>; <impact>. Fix: <action>.`
 
 | Level | Name | Meaning | Action |
 |---|---|---|---|
-| L1 | Nit | style, naming, taste | suggest, never block |
-| L2 | Low | small defect, minor junk, readability | may auto-fix |
-| L3 | Medium | over-engineering, duplication, missing test, weak error handling | fix before merge |
-| L4 | High | likely bug, broken pattern of the stack, perf problem on hot path, null deref | block merge, fix required |
-| L5 | Critical | data loss, security hole, breaking public contract, migration, architecture change | **STOP. Human decides.** Never auto-fix; describe options and risks |
+| L1 | Nit | local clarity issue with a specific improvement | optional, never block |
+| L2 | Low | minor defect with limited impact | recommend a fix |
+| L3 | Medium | material correctness or maintenance issue | fix before merge |
+| L4 | High | serious regression on a reachable path | block merge |
+| L5 | Critical | credible path to data loss, security compromise or severe contract break | stop; describe options for human decision |
 
-End the review with a verdict (`approve` / `changes requested` / `needs human`) and a separate list of all L5 items.
+Use the checklist and stack-specific levels below to guide inspection. Assign final severity by demonstrated impact. A migration, dependency, auth or architecture change listed under L5 is a prompt to check its consequences; required sign-off alone is not a defect.
+
+Keep unresolved questions and pending approvals separate from findings. If no defects were found, say so. End with `needs human` for a critical finding or outstanding required decision, `changes requested` for other blocking findings, or `approve` otherwise.
 
 ## General checklist (all stacks)
 
@@ -24,8 +28,8 @@ End the review with a verdict (`approve` / `changes requested` / `needs human`) 
 - blind `?.`/`??`/default that hides a bug instead of handling it
 - empty collections/strings assumed non-empty; off-by-one on first/last element
 
-**Simplicity (KISS is the dominant criterion)**
-- Is there a simpler way with the same result? If yes → L3.
+**Simplicity**
+- Flag complexity when you can identify what it makes unsafe or hard to change. A shorter alternative or a size threshold alone does not block a change.
 - interface/abstract/factory/wrapper with a single implementation and no real need
 - speculative generality: options, flags, hooks, generics nobody uses
 - nesting deeper than 3, functions over ~30 lines, more than 4 parameters
@@ -48,6 +52,8 @@ End the review with a verdict (`approve` / `changes requested` / `needs human`) 
 
 **Git hygiene**
 - branch name matches `feature|bugfix|hotfix|refactor|docs|chore|temp|wip/<what>`
-- every commit is Conventional Commits, title only, $commit_language text, **no co-author / no Claude mention** (violation → L3)
+- every commit is Conventional Commits, title only, $commit_language text, **no co-author / no Claude mention**
 - one task per branch, no unrelated changes mixed in
 - PR: title with prefix and $pr_language text; description starts with `# $pr_heading` in $pr_language
+
+When changing a review rule, try it on a known violation, a safe exception and an unrelated diff. Compare detected defects, false positives and token use on the same model. Narrow or drop rules that only add noise.
