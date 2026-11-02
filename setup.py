@@ -13,7 +13,7 @@ from string import Template
 
 VERSION = "0.1.0"
 ROOT = Path(__file__).resolve().parent / "templates"  # build.py swaps this line in the bundle
-STACKS = ["csharp", "unity", "nodejs", "typescript", "react"]
+STACKS = ["csharp", "unity", "nodejs", "typescript", "react", "python"]
 IMPLIES = {"unity": ["csharp"], "react": ["typescript"]}
 AGENTS = {"claude": "CLAUDE.md", "codex": "AGENTS.md", "copilot": ".github/copilot-instructions.md"}
 WEB = {"nodejs", "typescript", "react"}
@@ -137,12 +137,14 @@ def build(target, stacks, area, extras, forge, force=False, agents=("claude",), 
         parts = [read(ex / "editorconfig" / "base.ini")]
         if "csharp" in stacks:
             parts.append(read(ex / "editorconfig" / "csharp.ini"))
+        if "python" in stacks:
+            parts.append(read(ex / "editorconfig" / "python.ini"))
         if web:
             parts.append(read(ex / "editorconfig" / "web.ini"))
         put(".editorconfig", "".join(parts))
 
     if "gitignore" in extras:
-        names = [n for n, on in (("unity", "unity" in stacks), ("dotnet", "csharp" in stacks), ("node", web)) if on]
+        names = [n for n, on in (("unity", "unity" in stacks), ("dotnet", "csharp" in stacks), ("node", web), ("python", "python" in stacks)) if on]
         body = "\n".join(read(ex / "gitignore" / f"{n}.gitignore").strip("\n") for n in names)
         block(".gitignore", body, HASH_MARKS)
 

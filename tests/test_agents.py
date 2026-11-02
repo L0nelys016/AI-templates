@@ -6,6 +6,16 @@ import setup
 
 
 class AgentTest(unittest.TestCase):
+    def test_python_stack(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            actions, _ = setup.build(Path(tmp), ["python", "react"], None,
+                                     ["gitignore", "editorconfig"], "github")
+            outputs = {p.name: s for p, s, _ in actions}
+            self.assertIn("[*.py]", outputs[".editorconfig"])
+            self.assertIn("__pycache__/", outputs[".gitignore"])
+            self.assertIn("unittest", outputs["CLAUDE.md"])
+            self.assertIn("Python", outputs["REVIEW.md"])
+
     def test_languages(self):
         with tempfile.TemporaryDirectory() as tmp:
             for commit in ("ru", "en"):
