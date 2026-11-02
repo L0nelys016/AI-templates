@@ -17,11 +17,16 @@ class BuildTest(unittest.TestCase):
             bundle.write_bytes(build.bundle().encode("utf-8"))
             outs = []
             for script in (HERE / "setup.py", bundle):
-                t = tmp / script.stem
+                t = tmp / ("Проект с пробелом " + script.stem)
                 t.mkdir()
-                args = [sys.executable, "-I", str(script), "--target", str(t), "--stacks", "unity,react",
+                (t / "AGENTS.md").write_text("User instructions\n", encoding="utf-8")
+                args = [sys.executable, "-I", str(script), "--target", str(t), "--stacks", "python,unity,react", "--agent", "all",
                         "--area", "game", "--extras", "all", "--forge", "both", "--yes"]
                 subprocess.run(args, check=True, capture_output=True)
+                first = (t / "AGENTS.md").read_bytes()
+                subprocess.run(args, check=True, capture_output=True)
+                self.assertTrue(first.startswith(b"User instructions"))
+                self.assertEqual(first, (t / "AGENTS.md").read_bytes())
                 outs.append({p.relative_to(t).as_posix(): p.read_bytes() for p in t.rglob("*") if p.is_file()})
             self.assertEqual(outs[0], outs[1])
             self.assertIn(".github/pull_request_template.md", outs[0])
