@@ -181,11 +181,14 @@ def choose(title, options, multi):
     while True:
         try:
             picked = parse_list(input("> ").strip(), options)
+            if options == STACKS and not picked:
+                print("Выберите хотя бы один стек.")
+                continue
             if multi or len(picked) <= 1:
                 return picked
         except ValueError as e:
-            print(f"unknown option: {e}")
-        print("try again" if multi else "pick one")
+            print(f"Нет такого варианта: {e}")
+        print("Попробуйте ещё раз." if multi else "Выберите один номер.")
 
 
 def main(argv=None):
@@ -208,18 +211,18 @@ def main(argv=None):
     try:
         if a.target is None:
             a.target = (input("Target project folder [.]: ").strip() or ".") if ask else "."
-        stacks = parse_list(a.stacks, STACKS) if a.stacks else (choose("Stacks (multi, e.g. 1,3):", STACKS, True) if ask else [])
-        area = a.area if a.area is not None else (choose("Project area:", ["none"] + AREAS, False) or ["none"])[0] if ask else "none"
-        agents = (choose("Agents (Enter = claude):", list(AGENTS), True) if ask else []) if a.agent is None else (
+        stacks = parse_list(a.stacks, STACKS) if a.stacks else (choose("Какие технологии использует проект? Введите номера через запятую, например 1,3. Unity включает C#, React включает TypeScript.", STACKS, True) if ask else [])
+        area = a.area if a.area is not None else (choose("Назначение проекта: backend-api — сервер, desktop-app — настольное приложение, game — игра, library-cli — библиотека или утилита, web-frontend — сайт. Enter — пропустить.", ["none"] + AREAS, False) or ["none"])[0] if ask else "none"
+        agents = (choose("Какими помощниками вы пользуетесь? 1 — Claude, 2 — Codex, 3 — Copilot. Можно выбрать несколько через запятую. Enter — Claude.", list(AGENTS), True) if ask else []) if a.agent is None else (
             ["claude", "codex"] if a.agent == "both" else parse_list(a.agent, list(AGENTS)))
         agents = agents or ["claude"]
         def language(value, title):
             return value or ((choose(title, ["ru", "en"], False) or ["ru"])[0] if ask else "ru")
-        commit_lang = language(a.commit_lang, "Commit language (Enter = ru):")
-        pr_lang = language(a.pr_lang, "PR language (Enter = ru):")
+        commit_lang = language(a.commit_lang, "На каком языке писать текст после feat: или fix: в коммитах? ru — русский, en — английский. Enter — русский.")
+        pr_lang = language(a.pr_lang, "На каком языке писать заголовок и описание pull request? ru — русский, en — английский. Enter — русский.")
         extras = parse_list(a.extras, EXTRAS) if a.extras and a.extras != "none" else (
-            choose("Extras (multi, 'all' or Enter for none):", [e for e in EXTRAS if e != "settings" or "claude" in agents], True) if a.extras is None and ask else [])
-        forge = a.forge or ("github" if not ask or "pr" not in extras else (choose("PR template folder (Enter = github):", list(FORGES), False) or ["github"])[0])
+            choose("Дополнения: settings — настройки Claude; pr — шаблон PR; commitlint — проверка коммитов; editorconfig — отступы; gitignore — исключения Git. Номера через запятую, all — все доступные, Enter — пропустить.", [e for e in EXTRAS if e != "settings" or "claude" in agents], True) if a.extras is None and ask else [])
+        forge = a.forge or ("github" if not ask or "pr" not in extras else (choose("Где хранится репозиторий? Выбор определяет папку шаблона PR. Enter — GitHub; both — обе площадки.", list(FORGES), False) or ["github"])[0])
     except ValueError as e:
         sys.exit(f"error: unknown value {e}")
     if not stacks:
@@ -232,13 +235,16 @@ def main(argv=None):
 
     acts, notes = build(target, stacks, None if area == "none" else area, extras, forge, a.force, agents, commit_lang, pr_lang)
     print(f"\nTarget: {target}\nStacks: {', '.join(expand(stacks))}   Area: {area}")
+    if ask:
+        print("Проверьте папку и список файлов: create — создать, update/merge — обновить, append — дополнить, skip — пропустить.")
     for path, _, how in acts:
         print(f"  {how:<10} {path.relative_to(target)}")
     if a.dry_run:
         print("\n(dry run: nothing written)")
         return
-    if ask and input("\nProceed? [y/N] ").strip().lower() != "y":
-        sys.exit("aborted")
+    if ask and input("\nЗаписать перечисленные файлы? [д/N] ").strip().lower() not in {"д", "да", "y", "yes"}:
+        print("Установка отменена.")
+        return
     apply(acts)
     print("\nDone. Next steps:")
     for n in notes + ["commit the new files on a task branch (e.g. chore/claude-rules) and push"]:

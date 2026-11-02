@@ -41,6 +41,10 @@ python setup.py --target . --stacks react,nodejs --dry-run
 
 The script never runs `npm` or `git`; it prints the follow-up commands.
 
+## macOS Finder
+
+Double-click `Install.command` in the repository, or extract the `macOS.zip` release asset and double-click `Install.command` there. Select your project in the folder picker. The Russian-language wizard explains the choices and previews the files before asking for confirmation. Requires Python 3.9 or newer.
+
 ## macOS Terminal
 
 From this repository, start the wizard or try the installation in a separate project. Requires Python 3.9+.
