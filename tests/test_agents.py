@@ -6,6 +6,19 @@ import setup
 
 
 class AgentTest(unittest.TestCase):
+    def test_languages(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            for commit in ("ru", "en"):
+                for pr in ("ru", "en"):
+                    actions, _ = setup.build(Path(tmp), ["react"], None, ["pr"], "both",
+                                             commit_lang=commit, pr_lang=pr)
+                    outputs = {p.name: s for p, s, _ in actions}
+                    example = "feat: добавлен шаблон" if commit == "ru" else "feat: add template"
+                    heading = "# Что сделано" if pr == "ru" else "# Summary"
+                    self.assertIn(example, outputs["CLAUDE.md"])
+                    for name in ("CLAUDE.md", "REVIEW.md", "pull_request_template.md"):
+                        self.assertIn(heading, outputs[name])
+
     def test_output_paths(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

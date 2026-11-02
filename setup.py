@@ -9,6 +9,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from string import Template
 
 VERSION = "0.1.0"
 ROOT = Path(__file__).resolve().parent / "templates"  # build.py swaps this line in the bundle
@@ -60,8 +61,14 @@ def merge(dst, src):
     return dst
 
 
-def build(target, stacks, area, extras, forge, force=False, agents=("claude",)):
+def build(target, stacks, area, extras, forge, force=False, agents=("claude",), commit_lang="ru", pr_lang="ru"):
+
     """Return ([(path, text|None, how)], [next-step notes]). Touches nothing on disk."""
+    languages = {"ru": "Russian", "en": "English"}
+    examples = {"ru": "feat: добавлен шаблон", "en": "feat: add template"}
+    words = dict(commit_language=languages[commit_lang], commit_example=examples[commit_lang],
+                 pr_language=languages[pr_lang], pr_example=examples[pr_lang],
+                 pr_heading="Что сделано" if pr_lang == "ru" else "Summary")
     stacks = expand(stacks)
     extras = set(extras)
     acts, notes = [], []
@@ -79,7 +86,7 @@ def build(target, stacks, area, extras, forge, force=False, agents=("claude",)):
         acts.append((p, text, how))
 
     for kind in ("CLAUDE", "REVIEW"):
-        parts = [read(ROOT / "core" / f"{kind}.md")]
+        parts = [Template(read(ROOT / "core" / f"{kind}.md")).safe_substitute(words)]
         parts += [read(ROOT / "stacks" / s / f"{kind}.md") for s in stacks]
         if kind == "CLAUDE" and area:
             parts.append(read(ROOT / "areas" / f"{area}.md"))
@@ -113,7 +120,7 @@ def build(target, stacks, area, extras, forge, force=False, agents=("claude",)):
 
     if "pr" in extras:
         for d in FORGES[forge]:
-            put(f"{d}/pull_request_template.md", read(ex / "pull_request_template.md"))
+            put(f"{d}/pull_request_template.md", read(ex / f"pull_request_template.{pr_lang}.md"))
 
     if "commitlint" in extras:
         if web:
@@ -185,6 +192,8 @@ def main(argv=None):
     ap.add_argument("--target", help="project folder (default: ask, '.' if empty)")
     ap.add_argument("--stacks", help=f"comma list of: {', '.join(STACKS)}")
     ap.add_argument("--agent", help="claude,codex,copilot, all, or both (claude,codex)")
+    ap.add_argument("--commit-lang", choices=["ru", "en"])
+    ap.add_argument("--pr-lang", choices=["ru", "en"])
     ap.add_argument("--area", help=f"one of: {', '.join(AREAS)}, none")
     ap.add_argument("--extras", help=f"comma list of: {', '.join(EXTRAS)}, all, none")
     ap.add_argument("--forge", choices=list(FORGES), help="where the PR template goes")
@@ -202,6 +211,10 @@ def main(argv=None):
         agents = (choose("Agents (Enter = claude):", list(AGENTS), True) if ask else []) if a.agent is None else (
             ["claude", "codex"] if a.agent == "both" else parse_list(a.agent, list(AGENTS)))
         agents = agents or ["claude"]
+        def language(value, title):
+            return value or ((choose(title, ["ru", "en"], False) or ["ru"])[0] if ask else "ru")
+        commit_lang = language(a.commit_lang, "Commit language (Enter = ru):")
+        pr_lang = language(a.pr_lang, "PR language (Enter = ru):")
         extras = parse_list(a.extras, EXTRAS) if a.extras and a.extras != "none" else (
             choose("Extras (multi, 'all' or Enter for none):", [e for e in EXTRAS if e != "settings" or "claude" in agents], True) if a.extras is None and ask else [])
         forge = a.forge or ("github" if not ask or "pr" not in extras else (choose("PR template folder (Enter = github):", list(FORGES), False) or ["github"])[0])
@@ -215,7 +228,7 @@ def main(argv=None):
     if not target.is_dir():
         sys.exit(f"error: {target} is not a directory")
 
-    acts, notes = build(target, stacks, None if area == "none" else area, extras, forge, a.force, agents)
+    acts, notes = build(target, stacks, None if area == "none" else area, extras, forge, a.force, agents, commit_lang, pr_lang)
     print(f"\nTarget: {target}\nStacks: {', '.join(expand(stacks))}   Area: {area}")
     for path, _, how in acts:
         print(f"  {how:<10} {path.relative_to(target)}")
