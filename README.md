@@ -79,4 +79,6 @@ python -m unittest discover tests
 
 ## Download (no clone needed)
 
+Extract the archive for your platform. On macOS open `Install.command` from `macOS.zip`. On Windows open `Install.cmd` from `Windows.zip`. On Linux extract `Linux.tar.gz` and run `./Install.sh` from its directory. Each archive includes the installer and requires Python 3.9 or later.
+
 Take `claude-templates.py` from the [latest release](../../releases/latest) and run `python claude-templates.py`. It is a single file with all templates embedded. Build it yourself with `python build.py` (output: `dist/claude-templates.py`); pushing a `v*` tag publishes a release automatically.
