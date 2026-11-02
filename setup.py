@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install CLAUDE.md / REVIEW.md rule templates (and optional extras) into a project.
+"""Install Claude, Codex and Copilot instructions (and optional extras) into a project.
 
 Interactive:  python setup.py
 Scripted:     python setup.py --target ../MyGame --stacks unity --area game --extras all --forge both --yes
@@ -9,11 +9,13 @@ import json
 import os
 import sys
 from pathlib import Path
+from string import Template
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 ROOT = Path(__file__).resolve().parent / "templates"  # build.py swaps this line in the bundle
-STACKS = ["csharp", "unity", "nodejs", "typescript", "react"]
+STACKS = ["csharp", "unity", "nodejs", "typescript", "react", "python"]
 IMPLIES = {"unity": ["csharp"], "react": ["typescript"]}
+AGENTS = {"claude": "CLAUDE.md", "codex": "AGENTS.md", "copilot": ".github/copilot-instructions.md"}
 WEB = {"nodejs", "typescript", "react"}
 AREAS = sorted(p.stem for p in (ROOT / "areas").glob("*.md"))
 EXTRAS = ["settings", "pr", "commitlint", "editorconfig", "gitignore"]
@@ -59,8 +61,14 @@ def merge(dst, src):
     return dst
 
 
-def build(target, stacks, area, extras, forge, force=False):
+def build(target, stacks, area, extras, forge, force=False, agents=("claude",), commit_lang="ru", pr_lang="ru"):
+
     """Return ([(path, text|None, how)], [next-step notes]). Touches nothing on disk."""
+    languages = {"ru": "Russian", "en": "English"}
+    examples = {"ru": "feat: добавлен шаблон", "en": "feat: add template"}
+    words = dict(commit_language=languages[commit_lang], commit_example=examples[commit_lang],
+                 pr_language=languages[pr_lang], pr_example=examples[pr_lang],
+                 pr_heading="Что сделано" if pr_lang == "ru" else "Summary")
     stacks = expand(stacks)
     extras = set(extras)
     acts, notes = [], []
@@ -78,16 +86,29 @@ def build(target, stacks, area, extras, forge, force=False):
         acts.append((p, text, how))
 
     for kind in ("CLAUDE", "REVIEW"):
-        parts = [read(ROOT / "core" / f"{kind}.md")]
+        parts = [Template(read(ROOT / "core" / f"{kind}.md")).safe_substitute(words)]
         parts += [read(ROOT / "stacks" / s / f"{kind}.md") for s in stacks]
         if kind == "CLAUDE" and area:
             parts.append(read(ROOT / "areas" / f"{area}.md"))
-        block(f"{kind}.md", "\n\n".join(p.strip("\n") for p in parts), MD_MARKS, f"# {kind}.md\n\n")
+        body = "\n\n".join(p.strip("\n") for p in parts)
+        if kind == "REVIEW":
+            block("REVIEW.md", body, MD_MARKS, "# REVIEW.md\n\n")
+            continue
+        for agent in dict.fromkeys(agents):
+            rel = AGENTS[agent]
+            review = "../REVIEW.md" if agent == "copilot" else "REVIEW.md"
+            block(rel, body + f"\n\nFor code reviews, follow [the checklist]({review}).", MD_MARKS, f"# {Path(rel).name}\n\n")
+            if agent == "codex":
+                override = target / "AGENTS.override.md"
+                if override.is_file() and read(override).strip():
+                    notes.append("AGENTS.override.md takes precedence over AGENTS.md.")
+                if len(acts[-1][1].encode("utf-8")) > 32768:
+                    notes.append("AGENTS.md exceeds the default 32 KiB Codex project instruction budget.")
 
     ex = ROOT / "extras"
     web = bool(WEB & set(stacks))
 
-    if "settings" in extras:
+    if "settings" in extras and "claude" in agents:
         p = target / ".claude" / "settings.json"
         data = json.loads(read(ex / "settings.json"))
         if p.exists():
@@ -99,7 +120,7 @@ def build(target, stacks, area, extras, forge, force=False):
 
     if "pr" in extras:
         for d in FORGES[forge]:
-            put(f"{d}/pull_request_template.md", read(ex / "pull_request_template.md"))
+            put(f"{d}/pull_request_template.md", read(ex / f"pull_request_template.{pr_lang}.md"))
 
     if "commitlint" in extras:
         if web:
@@ -116,12 +137,14 @@ def build(target, stacks, area, extras, forge, force=False):
         parts = [read(ex / "editorconfig" / "base.ini")]
         if "csharp" in stacks:
             parts.append(read(ex / "editorconfig" / "csharp.ini"))
+        if "python" in stacks:
+            parts.append(read(ex / "editorconfig" / "python.ini"))
         if web:
             parts.append(read(ex / "editorconfig" / "web.ini"))
         put(".editorconfig", "".join(parts))
 
     if "gitignore" in extras:
-        names = [n for n, on in (("unity", "unity" in stacks), ("dotnet", "csharp" in stacks), ("node", web)) if on]
+        names = [n for n, on in (("unity", "unity" in stacks), ("dotnet", "csharp" in stacks), ("node", web), ("python", "python" in stacks)) if on]
         body = "\n".join(read(ex / "gitignore" / f"{n}.gitignore").strip("\n") for n in names)
         block(".gitignore", body, HASH_MARKS)
 
@@ -158,11 +181,14 @@ def choose(title, options, multi):
     while True:
         try:
             picked = parse_list(input("> ").strip(), options)
+            if options == STACKS and not picked:
+                print("Choose at least one technology.")
+                continue
             if multi or len(picked) <= 1:
                 return picked
         except ValueError as e:
-            print(f"unknown option: {e}")
-        print("try again" if multi else "pick one")
+            print(f"Unknown option: {e}")
+        print("Try again." if multi else "Choose one number.")
 
 
 def main(argv=None):
@@ -170,6 +196,9 @@ def main(argv=None):
     ap.add_argument("--version", action="version", version=f"claude-templates {VERSION}")
     ap.add_argument("--target", help="project folder (default: ask, '.' if empty)")
     ap.add_argument("--stacks", help=f"comma list of: {', '.join(STACKS)}")
+    ap.add_argument("--agent", help="claude,codex,copilot, all, or both (claude,codex)")
+    ap.add_argument("--commit-lang", choices=["ru", "en"])
+    ap.add_argument("--pr-lang", choices=["ru", "en"])
     ap.add_argument("--area", help=f"one of: {', '.join(AREAS)}, none")
     ap.add_argument("--extras", help=f"comma list of: {', '.join(EXTRAS)}, all, none")
     ap.add_argument("--forge", choices=list(FORGES), help="where the PR template goes")
@@ -182,11 +211,18 @@ def main(argv=None):
     try:
         if a.target is None:
             a.target = (input("Target project folder [.]: ").strip() or ".") if ask else "."
-        stacks = parse_list(a.stacks, STACKS) if a.stacks else (choose("Stacks (multi, e.g. 1,3):", STACKS, True) if ask else [])
-        area = a.area if a.area is not None else (choose("Project area:", ["none"] + AREAS, False) or ["none"])[0] if ask else "none"
+        stacks = parse_list(a.stacks, STACKS) if a.stacks else (choose("Which technologies does your project use? Enter numbers separated by commas, such as 1,3. Unity includes C# and React includes TypeScript.", STACKS, True) if ask else [])
+        area = a.area if a.area is not None else (choose("What are you building? Choose a project area to add specific guidance, or press Enter to skip.", ["none"] + AREAS, False) or ["none"])[0] if ask else "none"
+        agents = (choose("Which AI assistants do you use? Enter one or more numbers separated by commas. Press Enter for Claude.", list(AGENTS), True) if ask else []) if a.agent is None else (
+            ["claude", "codex"] if a.agent == "both" else parse_list(a.agent, list(AGENTS)))
+        agents = agents or ["claude"]
+        def language(value, title):
+            return value or ((choose(title, ["ru", "en"], False) or ["ru"])[0] if ask else "ru")
+        commit_lang = language(a.commit_lang, "Which language should follow feat: or fix: in commit titles? Choose ru for Russian or en for English. Press Enter for Russian.")
+        pr_lang = language(a.pr_lang, "Which language should pull request titles and descriptions use? Choose ru for Russian or en for English. Press Enter for Russian.")
         extras = parse_list(a.extras, EXTRAS) if a.extras and a.extras != "none" else (
-            choose("Extras (multi, 'all' or Enter for none):", EXTRAS, True) if a.extras is None and ask else [])
-        forge = a.forge or ("github" if not ask or "pr" not in extras else (choose("PR template folder (Enter = github):", list(FORGES), False) or ["github"])[0])
+            choose("Optional files: settings configures Claude, pr adds a pull request template, commitlint checks commits, editorconfig defines formatting, and gitignore excludes files from Git. Enter numbers separated by commas, type all, or press Enter to skip.", [e for e in EXTRAS if e != "settings" or "claude" in agents], True) if a.extras is None and ask else [])
+        forge = a.forge or ("github" if not ask or "pr" not in extras else (choose("Where is your repository hosted? This determines where the pull request template goes. Press Enter for GitHub or choose both for GitHub and Gitea.", list(FORGES), False) or ["github"])[0])
     except ValueError as e:
         sys.exit(f"error: unknown value {e}")
     if not stacks:
@@ -197,15 +233,18 @@ def main(argv=None):
     if not target.is_dir():
         sys.exit(f"error: {target} is not a directory")
 
-    acts, notes = build(target, stacks, None if area == "none" else area, extras, forge, a.force)
+    acts, notes = build(target, stacks, None if area == "none" else area, extras, forge, a.force, agents, commit_lang, pr_lang)
     print(f"\nTarget: {target}\nStacks: {', '.join(expand(stacks))}   Area: {area}")
+    if ask:
+        print("Review the target folder and file list before confirming. Skipped files will be left as they are.")
     for path, _, how in acts:
         print(f"  {how:<10} {path.relative_to(target)}")
     if a.dry_run:
         print("\n(dry run: nothing written)")
         return
-    if ask and input("\nProceed? [y/N] ").strip().lower() != "y":
-        sys.exit("aborted")
+    if ask and input("\nWrite the listed files? [y/N] ").strip().lower() not in {"д", "да", "y", "yes"}:
+        print("Installation canceled.")
+        return
     apply(acts)
     print("\nDone. Next steps:")
     for n in notes + ["commit the new files on a task branch (e.g. chore/claude-rules) and push"]:
@@ -213,4 +252,6 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
+    if os.name == "nt" and not sys.stdout.isatty():
+        sys.stdout.reconfigure(encoding="utf-8")
     main()

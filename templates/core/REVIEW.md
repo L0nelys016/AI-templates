@@ -48,6 +48,6 @@ End the review with a verdict (`approve` / `changes requested` / `needs human`) 
 
 **Git hygiene**
 - branch name matches `feature|bugfix|hotfix|refactor|docs|chore|temp|wip/<what>`
-- every commit is Conventional Commits, title only, Russian text, **no co-author / no Claude mention** (violation → L3)
+- every commit is Conventional Commits, title only, $commit_language text, **no co-author / no Claude mention** (violation → L3)
 - one task per branch, no unrelated changes mixed in
-- PR: title with prefix and Russian text; description starts with `# Что сделано` in Russian
+- PR: title with prefix and $pr_language text; description starts with `# $pr_heading` in $pr_language

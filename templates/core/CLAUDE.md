@@ -44,15 +44,15 @@
 | `revert:` | revert |
 
 - Commit has a **title only**: no body, no description.
-- Commit titles are written in **Russian** (after the English type prefix), e.g. `feat: добавить экран настроек`.
+- Commit titles are written in **$commit_language** (after the English type prefix), e.g. `$commit_example`.
 - **Never** add `Co-Authored-By` or any mention of Claude/AI to commits or PRs.
 - Auto-commit after every action (every plan step) and **push immediately** (`git push`). Never leave unpushed work.
 - Never force-push, never rewrite pushed history, never skip hooks.
 
 **Pull requests: only when the user asks.**
 
-1. Title: type prefix + body **in Russian only**, e.g. `feat: добавить экран настроек`.
-2. Description starts with the heading `# Что сделано`, followed by a description in Russian.
+1. Title: type prefix + body **in $pr_language**, e.g. `$pr_example`.
+2. Description starts with the heading `# $pr_heading`, followed by a description in $pr_language.
 
 ## Human-in-the-loop (stop and ask)
 
