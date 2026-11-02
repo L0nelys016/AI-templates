@@ -1,7 +1,9 @@
 import subprocess
 import sys
+import tarfile
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent.parent
@@ -40,7 +42,30 @@ class BuildTest(unittest.TestCase):
             bundle = Path(tmp) / "c.py"
             bundle.write_bytes(build.bundle().encode("utf-8"))
             r = subprocess.run([sys.executable, "-I", str(bundle), "--version"], check=True, capture_output=True, text=True)
-            self.assertEqual("claude-templates 0.2.1", r.stdout.strip())
+            self.assertEqual("claude-templates 0.3.0", r.stdout.strip())
+
+    def test_localized_release_archives(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dist = Path(tmp) / "dist"
+            build.build_release(dist)
+            for lang, question in (("ru", "Записать перечисленные файлы?"), ("en", "Write the listed files?")):
+                script = dist / f"claude-templates-{lang}.py"
+                result = subprocess.run(
+                    [sys.executable, "-I", str(script), "--target", tmp, "--stacks", "python",
+                     "--area", "none", "--agent", "codex", "--extras", "none", "--commit-lang", "ru", "--pr-lang", "en"],
+                    input=b"\n", capture_output=True, check=True)
+                self.assertIn(question, result.stdout.decode("utf-8"))
+                self.assertFalse((Path(tmp) / "AGENTS.md").exists())
+                for os_name, launcher in (("Windows", "Install.cmd"), ("macOS", "Install.command")):
+                    with zipfile.ZipFile(dist / f"{os_name}-{lang}.zip") as archive:
+                        self.assertEqual(set(archive.namelist()), {launcher, "claude-templates.py"})
+                        self.assertEqual(archive.read("claude-templates.py"), script.read_bytes())
+                        self.assertEqual(build.launcher_bytes(launcher, lang), archive.read(launcher))
+                        self.assertTrue(archive.getinfo(launcher).external_attr >> 16 & 0o111)
+                with tarfile.open(dist / f"Linux-{lang}.tar.gz") as archive:
+                    self.assertEqual(set(archive.getnames()), {"Install.sh", "claude-templates.py"})
+                    self.assertEqual(archive.extractfile("claude-templates.py").read(), script.read_bytes())
+                    self.assertTrue(archive.getmember("Install.sh").mode & 0o111)
 
 
 if __name__ == "__main__":

@@ -12,7 +12,14 @@ import sys
 from pathlib import Path
 from string import Template
 
-VERSION = "0.2.1"
+VERSION = "0.3.0"
+MESSAGES = {}  # build.py embeds the installer translations here
+
+
+def tr(message):
+    return MESSAGES.get(message, message)
+
+
 ROOT = Path(__file__).resolve().parent / "templates"  # build.py swaps this line in the bundle
 STACKS = ["csharp", "unity", "nodejs", "typescript", "react", "python"]
 IMPLIES = {"unity": ["csharp"], "react": ["typescript"]}
@@ -57,7 +64,7 @@ def managed_span(text, marks, *, append_to=None):
             return start, offset + len(end)
         offset += len(line)
     if fence and append_to is not None:
-        raise SystemExit(f"error: close the Markdown code fence in {append_to} before installing rules")
+        raise SystemExit(tr("error: close the Markdown code fence in {append_to} before installing rules").format(append_to=append_to))
     return None
 
 
@@ -117,12 +124,12 @@ def build(target, stacks, area, extras, forge, force=False, agents=("claude",), 
         path = target / rel
         if agent not in rule_agents and path.is_file():
             if not path.resolve().is_relative_to(target.resolve()):
-                notes.append(f"Skipped unselected {rel}: it points outside the project.")
+                notes.append(tr("Skipped unselected {rel}: it points outside the project.").format(rel=rel))
                 continue
             try:
                 existing = read(path)
             except (UnicodeDecodeError, PermissionError):
-                notes.append(f"Skipped unselected {rel}: could not read it as UTF-8.")
+                notes.append(tr("Skipped unselected {rel}: could not read it as UTF-8.").format(rel=rel))
                 continue
             if managed_span(existing, MD_MARKS) is not None:
                 rule_agents.append(agent)
@@ -143,9 +150,9 @@ def build(target, stacks, area, extras, forge, force=False, agents=("claude",), 
             if agent == "codex":
                 override = target / "AGENTS.override.md"
                 if override.is_file() and read(override).strip():
-                    notes.append("AGENTS.override.md takes precedence over AGENTS.md.")
+                    notes.append(tr("AGENTS.override.md takes precedence over AGENTS.md."))
                 if len(acts[-1][1].encode("utf-8")) > 32768:
-                    notes.append("AGENTS.md exceeds the default 32 KiB Codex project instruction budget.")
+                    notes.append(tr("AGENTS.md exceeds the default 32 KiB Codex project instruction budget."))
 
     ex = ROOT / "extras"
     web = bool(WEB & set(stacks))
@@ -157,7 +164,7 @@ def build(target, stacks, area, extras, forge, force=False, agents=("claude",), 
             try:
                 data = merge(json.loads(read(p)), data)
             except json.JSONDecodeError as e:
-                raise SystemExit(f"error: {p} is not valid JSON ({e}); fix it or remove it first")
+                raise SystemExit(tr("error: {p} is not valid JSON ({e}); fix it or remove it first").format(p=p, e=e))
         acts.append((p, json.dumps(data, indent=2, ensure_ascii=False) + "\n", "merge" if p.exists() else "create"))
 
     if "pr" in extras:
@@ -219,81 +226,85 @@ def parse_list(raw, options):
 def choose(title, options, multi):
     print(f"\n{title}")
     for i, o in enumerate(options, 1):
-        print(f"  {i}) {o}")
+        label = tr(o)
+        print(f"  {i}) {o}" if label == o else f"  {i}) {o} — {label}")
     while True:
         try:
             picked = parse_list(input("> ").strip(), options)
             if options == STACKS and not picked:
-                print("Choose at least one technology.")
+                print(tr("Choose at least one technology."))
                 continue
             if multi or len(picked) <= 1:
                 return picked
         except ValueError as e:
-            print(f"Unknown option: {e}")
-        print("Try again." if multi else "Choose one number.")
+            print(tr("Unknown option: {e}").format(e=e))
+        print(tr("Try again.") if multi else tr("Choose one number."))
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(description=tr(__doc__), formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--version", action="version", version=f"claude-templates {VERSION}")
-    ap.add_argument("--target", help="project folder (default: ask, '.' if empty)")
-    ap.add_argument("--stacks", help=f"comma list of: {', '.join(STACKS)}")
-    ap.add_argument("--agent", help="claude,codex,copilot, all, or both (claude,codex)")
+    ap.add_argument("--target", help=tr("project folder (default: ask, '.' if empty)"))
+    ap.add_argument("--stacks", help=tr("comma list of: {options}").format(options=", ".join(STACKS)))
+    ap.add_argument("--agent", help=tr("claude,codex,copilot, all, or both (claude,codex)"))
     ap.add_argument("--commit-lang", choices=["ru", "en"])
     ap.add_argument("--pr-lang", choices=["ru", "en"])
-    ap.add_argument("--area", help=f"one of: {', '.join(AREAS)}, none")
-    ap.add_argument("--extras", help=f"comma list of: {', '.join(EXTRAS)}, all, none")
-    ap.add_argument("--forge", choices=list(FORGES), help="where the PR template goes")
-    ap.add_argument("--dry-run", action="store_true", help="show what would change, write nothing")
-    ap.add_argument("--yes", action="store_true", help="no prompts; missing values take defaults")
-    ap.add_argument("--force", action="store_true", help="overwrite existing extras (never needed for CLAUDE.md/REVIEW.md)")
+    ap.add_argument("--area", help=tr("one of: {options}, none").format(options=", ".join(AREAS)))
+    ap.add_argument("--extras", help=tr("comma list of: {options}, all, none").format(options=", ".join(EXTRAS)))
+    ap.add_argument("--forge", choices=list(FORGES), help=tr("where the PR template goes"))
+    ap.add_argument("--dry-run", action="store_true", help=tr("show what would change, write nothing"))
+    ap.add_argument("--yes", action="store_true", help=tr("no prompts; missing values take defaults"))
+    ap.add_argument("--force", action="store_true", help=tr("overwrite existing extras (never needed for CLAUDE.md/REVIEW.md)"))
     a = ap.parse_args(argv)
     ask = not a.yes
 
     try:
         if a.target is None:
-            a.target = (input("Target project folder [.]: ").strip() or ".") if ask else "."
-        stacks = parse_list(a.stacks, STACKS) if a.stacks else (choose("Which technologies does your project use? Enter numbers separated by commas, such as 1,3. Unity includes C# and React includes TypeScript.", STACKS, True) if ask else [])
-        area = a.area if a.area is not None else (choose("What are you building? Choose a project area to add specific guidance, or press Enter to skip.", ["none"] + AREAS, False) or ["none"])[0] if ask else "none"
-        agents = (choose("Which AI assistants do you use? Enter one or more numbers separated by commas. Press Enter for Claude.", list(AGENTS), True) if ask else []) if a.agent is None else (
+            a.target = (input(tr("Target project folder [.]: ")).strip() or ".") if ask else "."
+        stacks = parse_list(a.stacks, STACKS) if a.stacks else (choose(tr("Which technologies does your project use? Enter numbers separated by commas, such as 1,3. Unity includes C# and React includes TypeScript."), STACKS, True) if ask else [])
+        area = a.area if a.area is not None else (choose(tr("What are you building? Choose a project area to add specific guidance, or press Enter to skip."), ["none"] + AREAS, False) or ["none"])[0] if ask else "none"
+        agents = (choose(tr("Which AI assistants do you use? Enter one or more numbers separated by commas. Press Enter for Claude."), list(AGENTS), True) if ask else []) if a.agent is None else (
             ["claude", "codex"] if a.agent == "both" else parse_list(a.agent, list(AGENTS)))
         agents = agents or ["claude"]
         def language(value, title):
             return value or ((choose(title, ["ru", "en"], False) or ["ru"])[0] if ask else "ru")
-        commit_lang = language(a.commit_lang, "Which language should follow feat: or fix: in commit titles? Choose ru for Russian or en for English. Press Enter for Russian.")
-        pr_lang = language(a.pr_lang, "Which language should pull request titles and descriptions use? Choose ru for Russian or en for English. Press Enter for Russian.")
+        commit_lang = language(a.commit_lang, tr("Which language should follow feat: or fix: in commit titles? Choose ru for Russian or en for English. Press Enter for Russian."))
+        pr_lang = language(a.pr_lang, tr("Which language should pull request titles and descriptions use? Choose ru for Russian or en for English. Press Enter for Russian."))
         extras = parse_list(a.extras, EXTRAS) if a.extras and a.extras != "none" else (
-            choose("Optional files: settings configures Claude, pr adds a pull request template, commitlint checks commits, editorconfig defines formatting, and gitignore excludes files from Git. Enter numbers separated by commas, type all, or press Enter to skip.", [e for e in EXTRAS if e != "settings" or "claude" in agents], True) if a.extras is None and ask else [])
-        forge = a.forge or ("github" if not ask or "pr" not in extras else (choose("Where is your repository hosted? This determines where the pull request template goes. Press Enter for GitHub or choose both for GitHub and Gitea.", list(FORGES), False) or ["github"])[0])
+            choose(tr("Optional files: settings configures Claude, pr adds a pull request template, commitlint checks commits, editorconfig defines formatting, and gitignore excludes files from Git. Enter numbers separated by commas, type all, or press Enter to skip."), [e for e in EXTRAS if e != "settings" or "claude" in agents], True) if a.extras is None and ask else [])
+        forge = a.forge or ("github" if not ask or "pr" not in extras else (choose(tr("Where is your repository hosted? This determines where the pull request template goes. Press Enter for GitHub or choose both for GitHub and Gitea."), list(FORGES), False) or ["github"])[0])
     except ValueError as e:
-        sys.exit(f"error: unknown value {e}")
+        sys.exit(tr("error: unknown value {e}").format(e=e))
     if not stacks:
-        sys.exit("error: choose at least one stack (--stacks)")
+        sys.exit(tr("error: choose at least one stack (--stacks)"))
     if area != "none" and area not in AREAS:
-        sys.exit(f"error: unknown area '{area}'")
+        sys.exit(tr("error: unknown area '{area}'").format(area=area))
     target = Path(a.target).expanduser().resolve()
     if not target.is_dir():
-        sys.exit(f"error: {target} is not a directory")
+        sys.exit(tr("error: {target} is not a directory").format(target=target))
 
     acts, notes = build(target, stacks, None if area == "none" else area, extras, forge, a.force, agents, commit_lang, pr_lang)
-    print(f"\nTarget: {target}\nStacks: {', '.join(expand(stacks))}   Area: {area}")
+    print(tr("\nTarget: {target}\nStacks: {stacks}   Area: {area}").format(
+        target=target, stacks=", ".join(expand(stacks)), area=tr(area)))
     if ask:
-        print("Review the target folder and file list before confirming. Skipped files will be left as they are.")
+        print(tr("Review the target folder and file list before confirming. Skipped files will be left as they are."))
     for path, _, how in acts:
-        print(f"  {how:<10} {path.relative_to(target)}")
+        print(f"  {tr(how):<10} {path.relative_to(target)}")
     if a.dry_run:
-        print("\n(dry run: nothing written)")
+        print(tr("\n(dry run: nothing written)"))
         return
-    if ask and input("\nWrite the listed files? [y/N] ").strip().lower() not in {"д", "да", "y", "yes"}:
-        print("Installation canceled.")
+    if ask and input(tr("\nWrite the listed files? [y/N] ")).strip().lower() not in {"д", "да", "y", "yes"}:
+        print(tr("Installation canceled."))
         return
     apply(acts)
-    print("\nDone. Next steps:")
-    for n in notes + ["commit the new files on a task branch (e.g. chore/claude-rules) and push"]:
+    print(tr("\nDone. Next steps:"))
+    for n in notes + [tr("commit the new files on a task branch (e.g. chore/claude-rules) and push")]:
         print(f"  {n}")
 
 
 if __name__ == "__main__":
+    if MESSAGES:
+        argparse._ = tr  # argparse uses this gettext hook for built-in help and errors.
     if os.name == "nt" and not sys.stdout.isatty():
         sys.stdout.reconfigure(encoding="utf-8")
     main()

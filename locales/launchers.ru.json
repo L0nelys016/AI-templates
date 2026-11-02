@@ -1,0 +1,16 @@
+{
+  "Install.command": {
+    "Install project instructions for Claude, Codex and Copilot": "Установка инструкций проекта для Claude, Codex и Copilot",
+    "Install Python 3.9 or later from https://www.python.org/downloads/macos/ and open this file again.": "Установите Python 3.9 или новее с https://www.python.org/downloads/macos/ и снова откройте этот файл.",
+    "Press Enter to close this window.": "Нажмите Enter, чтобы закрыть окно.",
+    "Select the project folder where you want to install the instructions.": "Выберите папку проекта для установки инструкций.",
+    "Choose your project folder": "Выберите папку проекта",
+    "Press Enter to finish.": "Нажмите Enter для завершения."
+  },
+  "Install.cmd": {
+    "Install Python 3.9 or later, then open this file again.": "Установите Python 3.9 или новее и снова откройте этот файл."
+  },
+  "Install.sh": {
+    "Install Python 3.9 or later, then run this script again.": "Установите Python 3.9 или новее и снова запустите этот скрипт."
+  }
+}

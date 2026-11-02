@@ -6,11 +6,11 @@
 
 Требуется Python 3.9 или новее.
 
-| Система | Скачать | Как запустить |
-|---|---|---|
-| macOS | [macOS.zip](https://github.com/L0nelys016/AI-templates/releases/latest/download/macOS.zip) | Распакуйте архив и дважды щёлкните `Install.command` в Finder. |
-| Windows | [Windows.zip](https://github.com/L0nelys016/AI-templates/releases/latest/download/Windows.zip) | Распакуйте архив и дважды щёлкните `Install.cmd`. |
-| Linux | [Linux.tar.gz](https://github.com/L0nelys016/AI-templates/releases/latest/download/Linux.tar.gz) | Распакуйте архив и запустите `./Install.sh` из распакованной папки. |
+| Система | Русский | English | Как запустить |
+|---|---|---|---|
+| macOS | [macOS-ru.zip](https://github.com/L0nelys016/AI-templates/releases/latest/download/macOS-ru.zip) | [macOS-en.zip](https://github.com/L0nelys016/AI-templates/releases/latest/download/macOS-en.zip) | Распакуйте архив и дважды щёлкните `Install.command` в Finder. |
+| Windows | [Windows-ru.zip](https://github.com/L0nelys016/AI-templates/releases/latest/download/Windows-ru.zip) | [Windows-en.zip](https://github.com/L0nelys016/AI-templates/releases/latest/download/Windows-en.zip) | Распакуйте архив и дважды щёлкните `Install.cmd`. |
+| Linux | [Linux-ru.tar.gz](https://github.com/L0nelys016/AI-templates/releases/latest/download/Linux-ru.tar.gz) | [Linux-en.tar.gz](https://github.com/L0nelys016/AI-templates/releases/latest/download/Linux-en.tar.gz) | Распакуйте архив и запустите `./Install.sh` из распакованной папки. |
 
 Стеки: **C#**, **Unity** (подтягивает C#), **Python**, **Node.js**, **TypeScript**, **React** (подтягивает TypeScript).
 Области: `backend-api`, `web-frontend`, `game`, `desktop-app`, `library-cli`.
@@ -51,7 +51,7 @@ python setup.py --target . --stacks react,nodejs --dry-run
 
 ## Запуск на Mac без команд
 
-В Finder откройте `Install.command` двойным щелчком в папке шаблонов. Для установки из релиза скачайте и распакуйте `macOS.zip`, затем откройте `Install.command` из распакованной папки. Выберите папку своего проекта в диалоге. Мастер на английском языке объяснит варианты, покажет список файлов и попросит подтвердить запись. Потребуется Python 3.9 или новее.
+В Finder откройте `Install.command` двойным щелчком в папке шаблонов. Для установки из релиза скачайте и распакуйте `macOS-ru.zip`, затем откройте `Install.command` из распакованной папки. Выберите папку своего проекта в диалоге. Мастер объяснит варианты, покажет список файлов и попросит подтвердить запись. Потребуется Python 3.9 или новее.
 
 ## macOS Terminal
 
@@ -68,7 +68,7 @@ python3 setup.py --target "../Demo Python" --stacks python --agent all --commit-
 
 ```bash
 python3 build.py
-python3 dist/claude-templates.py
+python3 dist/claude-templates-ru.py
 ```
 
 Codex читает проектные инструкции от корня репозитория до рабочего каталога. В каждой папке непустой `AGENTS.override.md` имеет приоритет над `AGENTS.md`; более локальные правила имеют приоритет при конфликте. Общий бюджет проектных инструкций по умолчанию — 32 КиБ. [Codex](https://learn.chatgpt.com/docs/agent-configuration/agents-md)
@@ -87,6 +87,6 @@ python -m unittest discover tests
 
 ## Скачивание (клонировать не нужно)
 
-Распакуйте архив для своей системы. На macOS откройте `Install.command` из `macOS.zip`. На Windows откройте `Install.cmd` из `Windows.zip`. На Linux распакуйте `Linux.tar.gz` и запустите `./Install.sh` из его каталога. В каждый архив включён установщик. Требуется Python 3.9 или новее.
+Распакуйте архив для своей системы. На macOS откройте `Install.command` из `macOS-ru.zip`. На Windows откройте `Install.cmd` из `Windows-ru.zip`. На Linux распакуйте `Linux-ru.tar.gz` и запустите `./Install.sh` из его каталога. В каждый архив включён установщик. Требуется Python 3.9 или новее.
 
-Возьмите `claude-templates.py` из [последнего релиза](../../releases/latest) и запустите `python claude-templates.py`. Это один файл со всеми встроенными шаблонами. Собрать его самому: `python build.py` (результат: `dist/claude-templates.py`); пуш тега `v*` публикует релиз автоматически.
+Возьмите `claude-templates-ru.py` из [последнего релиза](../../releases/latest) и запустите `python claude-templates-ru.py`. Это один файл со всеми встроенными шаблонами. Собрать его самому: `python build.py` (результат: `dist/claude-templates-ru.py`); пуш тега `v*` публикует релиз автоматически.
