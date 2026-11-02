@@ -24,11 +24,11 @@ class BuildTest(unittest.TestCase):
                         "--area", "game", "--extras", "all", "--forge", "both", "--yes"]
                 result = subprocess.run(args, capture_output=True)
                 self.assertEqual(result.returncode, 0, result.stderr)
-                self.assertIn(str(t), result.stdout.decode("utf-8"))
+                self.assertIn(str(t.resolve()), result.stdout.decode("utf-8"))
                 first = (t / "AGENTS.md").read_bytes()
                 result = subprocess.run(args, capture_output=True)
                 self.assertEqual(result.returncode, 0, result.stderr)
-                self.assertIn(str(t), result.stdout.decode("utf-8"))
+                self.assertIn(str(t.resolve()), result.stdout.decode("utf-8"))
                 self.assertTrue(first.startswith(b"User instructions"))
                 self.assertEqual(first, (t / "AGENTS.md").read_bytes())
                 outs.append({p.relative_to(t).as_posix(): p.read_bytes() for p in t.rglob("*") if p.is_file()})
