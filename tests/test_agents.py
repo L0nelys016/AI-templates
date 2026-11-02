@@ -6,6 +6,44 @@ import setup
 
 
 class AgentTest(unittest.TestCase):
+    def test_partial_reinstall_keeps_installed_profiles_in_sync(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            setup.apply(setup.build(root, ["python"], None, [], "github", agents=list(setup.AGENTS))[0])
+            for rel in setup.AGENTS.values():
+                path = root / rel
+                path.write_text(f"before {rel}\n{setup.read(path)}after {rel}\n", encoding="utf-8")
+
+            actions, _ = setup.build(root, ["react"], "web-frontend", [], "github", agents=["codex"],
+                                     commit_lang="en", pr_lang="en")
+            setup.apply(actions)
+            rules = []
+            for rel in setup.AGENTS.values():
+                text = setup.read(root / rel)
+                self.assertTrue(text.startswith(f"before {rel}\n"))
+                self.assertTrue(text.endswith(f"after {rel}\n"))
+                managed = text.split(setup.MD_MARKS[0])[1].split(setup.MD_MARKS[1])[0]
+                rules.append(managed.replace("](../REVIEW.md)", "](REVIEW.md)"))
+            self.assertEqual(len(set(rules)), 1)
+            for fragment in ("## React", "## TypeScript", "## Area: Web frontend", "feat: add template",
+                             "git reset --hard"):
+                self.assertIn(fragment, rules[0])
+            self.assertNotIn("## Python", rules[0])
+            review = setup.read(root / "REVIEW.md")
+            self.assertIn("## React", review)
+            self.assertNotIn("## Python", review)
+
+    def test_unselected_unmanaged_profile_is_untouched(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = root / "CLAUDE.md"
+            path.write_bytes(b"User instructions\n")
+            actions, _ = setup.build(root, ["python"], None, ["settings"], "github", agents=["codex"])
+            setup.apply(actions)
+            self.assertEqual(path.read_bytes(), b"User instructions\n")
+            self.assertFalse((root / setup.AGENTS["copilot"]).exists())
+            self.assertFalse((root / ".claude/settings.json").exists())
+
     def test_python_stack(self):
         with tempfile.TemporaryDirectory() as tmp:
             actions, _ = setup.build(Path(tmp), ["python", "react"], None,

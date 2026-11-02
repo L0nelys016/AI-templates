@@ -43,7 +43,7 @@ python setup.py --target . --stacks react,nodejs --dry-run
 
 ## What gets written
 
-- `CLAUDE.md` (Claude), `AGENTS.md` (Codex), `.github/copilot-instructions.md` (Copilot), `REVIEW.md`: the rules are placed between `claude-templates:begin/end` markers. Re-running updates only that block; your own text is kept.
+- `CLAUDE.md` (Claude), `AGENTS.md` (Codex), `.github/copilot-instructions.md` (Copilot) and `REVIEW.md` share rules between `claude-templates:begin/end` markers. Each run updates the shared checklist and all previously installed profiles, preserving text outside the markers. The agent selection controls which new profiles to install.
 - `settings` (Claude): `.claude/settings.json` merged (no Claude co-author/attribution, deny force-push and `reset --hard`).
 - `pr`: `pull_request_template.md` in `.github/` and/or `.gitea/`.
 - `commitlint`: Node stacks get commitlint + husky; others get plain `.githooks/` (commit format, title only, no co-author, branch name).

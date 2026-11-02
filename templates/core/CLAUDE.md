@@ -57,7 +57,7 @@ Publish **every new branch** as soon as you create it, even before its first new
 - **Never** add `Co-Authored-By` or any mention of Claude/AI to commits or PRs.
 - Commit one complete, verifiable change that can be reverted as a unit. Reading, searching and failed hypotheses do not need commits.
 - Immediately after **every commit**, run `git push` to the branch's upstream before starting the next change. If a push fails, resolve the cause or report the blocker before continuing.
-- Never force-push, never rewrite pushed history, never skip hooks.
+- Never force-push, rewrite pushed history, skip hooks or run `git reset --hard`.
 
 **Pull requests: only when the user asks.**
 
