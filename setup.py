@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install CLAUDE.md / REVIEW.md rule templates (and optional extras) into a project.
+"""Install Claude, Codex and Copilot instructions (and optional extras) into a project.
 
 Interactive:  python setup.py
 Scripted:     python setup.py --target ../MyGame --stacks unity --area game --extras all --forge both --yes
@@ -14,6 +14,7 @@ VERSION = "0.1.0"
 ROOT = Path(__file__).resolve().parent / "templates"  # build.py swaps this line in the bundle
 STACKS = ["csharp", "unity", "nodejs", "typescript", "react"]
 IMPLIES = {"unity": ["csharp"], "react": ["typescript"]}
+AGENTS = {"claude": "CLAUDE.md", "codex": "AGENTS.md", "copilot": ".github/copilot-instructions.md"}
 WEB = {"nodejs", "typescript", "react"}
 AREAS = sorted(p.stem for p in (ROOT / "areas").glob("*.md"))
 EXTRAS = ["settings", "pr", "commitlint", "editorconfig", "gitignore"]
@@ -59,7 +60,7 @@ def merge(dst, src):
     return dst
 
 
-def build(target, stacks, area, extras, forge, force=False):
+def build(target, stacks, area, extras, forge, force=False, agents=("claude",)):
     """Return ([(path, text|None, how)], [next-step notes]). Touches nothing on disk."""
     stacks = expand(stacks)
     extras = set(extras)
@@ -82,12 +83,25 @@ def build(target, stacks, area, extras, forge, force=False):
         parts += [read(ROOT / "stacks" / s / f"{kind}.md") for s in stacks]
         if kind == "CLAUDE" and area:
             parts.append(read(ROOT / "areas" / f"{area}.md"))
-        block(f"{kind}.md", "\n\n".join(p.strip("\n") for p in parts), MD_MARKS, f"# {kind}.md\n\n")
+        body = "\n\n".join(p.strip("\n") for p in parts)
+        if kind == "REVIEW":
+            block("REVIEW.md", body, MD_MARKS, "# REVIEW.md\n\n")
+            continue
+        for agent in dict.fromkeys(agents):
+            rel = AGENTS[agent]
+            review = "../REVIEW.md" if agent == "copilot" else "REVIEW.md"
+            block(rel, body + f"\n\nFor code reviews, follow [the checklist]({review}).", MD_MARKS, f"# {Path(rel).name}\n\n")
+            if agent == "codex":
+                override = target / "AGENTS.override.md"
+                if override.is_file() and read(override).strip():
+                    notes.append("AGENTS.override.md takes precedence over AGENTS.md.")
+                if len(acts[-1][1].encode("utf-8")) > 32768:
+                    notes.append("AGENTS.md exceeds the default 32 KiB Codex project instruction budget.")
 
     ex = ROOT / "extras"
     web = bool(WEB & set(stacks))
 
-    if "settings" in extras:
+    if "settings" in extras and "claude" in agents:
         p = target / ".claude" / "settings.json"
         data = json.loads(read(ex / "settings.json"))
         if p.exists():
@@ -170,6 +184,7 @@ def main(argv=None):
     ap.add_argument("--version", action="version", version=f"claude-templates {VERSION}")
     ap.add_argument("--target", help="project folder (default: ask, '.' if empty)")
     ap.add_argument("--stacks", help=f"comma list of: {', '.join(STACKS)}")
+    ap.add_argument("--agent", help="claude,codex,copilot, all, or both (claude,codex)")
     ap.add_argument("--area", help=f"one of: {', '.join(AREAS)}, none")
     ap.add_argument("--extras", help=f"comma list of: {', '.join(EXTRAS)}, all, none")
     ap.add_argument("--forge", choices=list(FORGES), help="where the PR template goes")
@@ -184,8 +199,11 @@ def main(argv=None):
             a.target = (input("Target project folder [.]: ").strip() or ".") if ask else "."
         stacks = parse_list(a.stacks, STACKS) if a.stacks else (choose("Stacks (multi, e.g. 1,3):", STACKS, True) if ask else [])
         area = a.area if a.area is not None else (choose("Project area:", ["none"] + AREAS, False) or ["none"])[0] if ask else "none"
+        agents = (choose("Agents (Enter = claude):", list(AGENTS), True) if ask else []) if a.agent is None else (
+            ["claude", "codex"] if a.agent == "both" else parse_list(a.agent, list(AGENTS)))
+        agents = agents or ["claude"]
         extras = parse_list(a.extras, EXTRAS) if a.extras and a.extras != "none" else (
-            choose("Extras (multi, 'all' or Enter for none):", EXTRAS, True) if a.extras is None and ask else [])
+            choose("Extras (multi, 'all' or Enter for none):", [e for e in EXTRAS if e != "settings" or "claude" in agents], True) if a.extras is None and ask else [])
         forge = a.forge or ("github" if not ask or "pr" not in extras else (choose("PR template folder (Enter = github):", list(FORGES), False) or ["github"])[0])
     except ValueError as e:
         sys.exit(f"error: unknown value {e}")
@@ -197,7 +215,7 @@ def main(argv=None):
     if not target.is_dir():
         sys.exit(f"error: {target} is not a directory")
 
-    acts, notes = build(target, stacks, None if area == "none" else area, extras, forge, a.force)
+    acts, notes = build(target, stacks, None if area == "none" else area, extras, forge, a.force, agents)
     print(f"\nTarget: {target}\nStacks: {', '.join(expand(stacks))}   Area: {area}")
     for path, _, how in acts:
         print(f"  {how:<10} {path.relative_to(target)}")
