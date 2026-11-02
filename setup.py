@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 from string import Template
 
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 ROOT = Path(__file__).resolve().parent / "templates"  # build.py swaps this line in the bundle
 STACKS = ["csharp", "unity", "nodejs", "typescript", "react", "python"]
 IMPLIES = {"unity": ["csharp"], "react": ["typescript"]}
