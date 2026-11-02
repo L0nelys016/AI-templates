@@ -51,6 +51,7 @@ Keep unresolved questions and pending approvals separate from findings. If no de
 - new logic without a test; tests asserting nothing; tests coupled to implementation
 
 **Git hygiene**
+- every new branch is pushed on creation and every commit is pushed immediately. Verify that the remote tip matches the local tip. A matching tip alone does not establish when earlier pushes happened.
 - branch name matches `feature|bugfix|hotfix|refactor|docs|chore|temp|wip/<what>`
 - every commit is Conventional Commits, title only, $commit_language text, **no co-author / no Claude mention**
 - one task per branch, no unrelated changes mixed in

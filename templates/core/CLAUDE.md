@@ -24,6 +24,8 @@
 
 **One task = one branch.** Never commit to `main`/`master` directly. Create or switch to the task branch before the first change.
 
+Publish **every new branch** as soon as you create it, even before its first new commit: `git push -u origin <branch>`. Use the project's designated remote if it differs from `origin`.
+
 | Branch | Purpose |
 |---|---|
 | `feature/<what>` | new functionality |
@@ -53,7 +55,8 @@
 - Commit has a **title only**: no body, no description.
 - Commit titles are written in **$commit_language** (after the English type prefix), e.g. `$commit_example`.
 - **Never** add `Co-Authored-By` or any mention of Claude/AI to commits or PRs.
-- Commit one complete, verifiable change that can be reverted as a unit. Reading, searching and failed hypotheses do not need commits. Push at the point required by the project's workflow or requested by the user.
+- Commit one complete, verifiable change that can be reverted as a unit. Reading, searching and failed hypotheses do not need commits.
+- Immediately after **every commit**, run `git push` to the branch's upstream before starting the next change. If a push fails, resolve the cause or report the blocker before continuing.
 - Never force-push, never rewrite pushed history, never skip hooks.
 
 **Pull requests: only when the user asks.**
@@ -69,4 +72,4 @@ Get a human decision before carrying out an unapproved migration, destructive op
 
 ## Definition of done
 
-Check the expected behavior and run the applicable build, tests and linters. Resolve new failures or warnings; disclose anything unverified. Leave a clean, reviewable change on the task branch.
+Check the expected behavior and run the applicable build, tests and linters. Resolve new failures or warnings; disclose anything unverified. The task branch must be published and its remote tip must match the final local commit.
